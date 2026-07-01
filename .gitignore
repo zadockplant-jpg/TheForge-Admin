@@ -1,0 +1,11 @@
+.venv/
+build/
+dist/
+__pycache__/
+*.pyc
+*.pyo
+*.spec.bak
+.sendforge_admin_session.json
+
+*.spec
+_patch_bundles/
