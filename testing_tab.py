@@ -60,8 +60,9 @@ def normalized_catalog_section(section):
         items.append(normalized_item)
     normalized["items"] = items
     if normalized.get("key") == "skin_packs":
-        normalized["title"] = "Skin pack entitlements"
-        normalized["description"] = "Only the 3 purchasable skin bundles. Individual skins live inside TabForge Skins."
+        normalized["key"] = "future_visual_addons"
+        normalized["title"] = "Future visual add-ons"
+        normalized["description"] = "Skins and icon packs are delayed future one-time add-ons; no active checkout yet."
     return normalized
 
 
@@ -69,28 +70,30 @@ FALLBACK_CATALOG = [
     {
         "key": "product_features",
         "title": "Product features",
-        "description": "Account-level TabForge purchases. Pro now includes all 10 pages; Collections is a subscription entitlement.",
+        "description": "Current TabForge billing profile and compatibility aliases.",
         "items": [
-            {"slug": "tabforge", "label": "TabForge Pro", "description": "Main Pro unlock. Includes all 10 pages."},
-            {"slug": "tabforge-collections", "label": "Collections Subscription", "description": "Access to current TabForge shortcut collections while active."},
+            {"slug": "tabforge", "label": "TabForge Pro", "description": "$10 one-time purchase: local notes/images on 1 device."},
+            {"slug": "tabforge-subscription", "label": "Sync + Collections", "description": "$5/month: Pro while active, current collections, 20GB profile, up to 5 devices. Cloud provider is admin-only/stubbed until wired."},
+            {"slug": "tabforge-sync-collections", "label": "Sync + Collections Alias", "description": "Compatibility alias for the current subscription entitlement."},
+            {"slug": "tabforge-collections", "label": "Collections Legacy Alias", "description": "Legacy compatibility entitlement included with Sync + Collections."},
         ],
     },
     {
         "key": "shortcut_packs",
-        "title": "Shortcut pack entitlements",
-        "description": "Legacy individual collection slugs plus subscription-backed unlocks.",
+        "title": "Included collection entitlements",
+        "description": "Collections are no longer sold individually; these are included while Sync + Collections is active.",
         "items": [
-            {"slug": "tabforge-pack-builder", "label": "Builder Pack"},
-            {"slug": "tabforge-pack-money", "label": "Money Pack"},
-            {"slug": "tabforge-pack-dev", "label": "Developer Pack"},
-            {"slug": "tabforge-pack-media", "label": "Media Pack"},
-            {"slug": "tabforge-pack-research", "label": "Research Pack"},
+            {"slug": "tabforge-pack-builder", "label": "Builder Collection"},
+            {"slug": "tabforge-pack-money", "label": "Money Collection"},
+            {"slug": "tabforge-pack-dev", "label": "Developer Collection"},
+            {"slug": "tabforge-pack-media", "label": "Media Collection"},
+            {"slug": "tabforge-pack-research", "label": "Research Collection"},
         ],
     },
     {
-        "key": "skin_packs",
-        "title": "Skin pack entitlements",
-        "description": "Only the 3 purchasable skin bundles. Individual skins live inside TabForge Skins.",
+        "key": "future_visual_addons",
+        "title": "Future visual add-ons",
+        "description": "Skins and icon packs are delayed and will be future one-time add-ons.",
         "items": [
             {"slug": "tabforge-skin-bundle-command-center", "label": "Star Base"},
             {"slug": "tabforge-skin-bundle-creator-money", "label": "Creator"},
@@ -139,7 +142,7 @@ class TestingTab(ctk.CTkFrame):
         ctk.CTkLabel(
             warning,
             text=(
-                f"OWNER ACCOUNT TOOLS Ã¢â‚¬â€ restricted to {OWNER_EMAIL}. Entitlement controls write REAL owned "
+                f"OWNER ACCOUNT TOOLS — restricted to {OWNER_EMAIL}. Entitlement controls write REAL owned "
                 "backend rows for this one account only. Referral-flow controls create tagged simulation rows only. "
                 "No emails, Stripe charges, or Cash App transfers are sent from this tab."
             ),
@@ -185,7 +188,7 @@ class TestingTab(ctk.CTkFrame):
         self.log_frame.grid(row=4, column=0, sticky="nsew", padx=10, pady=(0, 10))
 
     def _build_referral_controls_static(self, box):
-        ctk.CTkLabel(box, text="Referral flow simulator Ã¢â‚¬â€ TEST ROWS ONLY", font=("Arial", 16, "bold"), anchor="w").pack(fill="x", padx=10, pady=(10, 3))
+        ctk.CTkLabel(box, text="Referral flow simulator — TEST ROWS ONLY", font=("Arial", 16, "bold"), anchor="w").pack(fill="x", padx=10, pady=(10, 3))
         ctk.CTkLabel(
             box,
             text=(
@@ -218,9 +221,9 @@ class TestingTab(ctk.CTkFrame):
         ctk.CTkLabel(box, text="Increment live flow", font=("Arial", 14, "bold")).pack(anchor="w", padx=10, pady=(16, 5))
         for text, action in [
             ("+1 Invite", "invite"),
-            ("+1 Verified account", "verified_account"),
-            ("+1 Qualified Pro purchase", "qualified_purchase"),
-            ("+1 Refunded Pro purchase", "refunded_purchase"),
+            ("+1 Verified account", "verify"),
+            ("+1 Qualified Pro purchase", "purchase"),
+            ("+1 Refunded Pro purchase", "refund"),
         ]:
             ctk.CTkButton(box, text=text, command=lambda a=action: self.step(a, 1)).pack(fill="x", padx=10, pady=2)
 
@@ -307,14 +310,17 @@ class TestingTab(ctk.CTkFrame):
             return [section for section in (normalized_catalog_section(section) for section in sections) if section]
         presets = self.state.get("entitlementPresets") or []
         if presets:
-            grouped = {"product_features": [], "shortcut_packs": [], "skin_packs": []}
+            grouped = {"product_features": [], "shortcut_packs": [], "future_visual_addons": []}
             for item in presets:
                 if isinstance(item, dict):
-                    grouped.setdefault(item.get("category") or "shortcut_packs", []).append(normalized_catalog_item(item))
+                    category = item.get("category") or "shortcut_packs"
+                    if category == "skin_packs":
+                        category = "future_visual_addons"
+                    grouped.setdefault(category, []).append(normalized_catalog_item(item))
             return [
-                normalized_catalog_section({"key": "product_features", "title": "Product features", "description": "Account-level purchases.", "items": grouped.get("product_features") or []}),
-                normalized_catalog_section({"key": "shortcut_packs", "title": "Shortcut pack entitlements", "description": "Shortcut pack purchases only.", "items": grouped.get("shortcut_packs") or []}),
-                normalized_catalog_section({"key": "skin_packs", "title": "Skin pack entitlements", "description": "The 3 purchasable skin packs.", "items": grouped.get("skin_packs") or []}),
+                normalized_catalog_section({"key": "product_features", "title": "Product features", "description": "Current account-level purchases and subscription aliases.", "items": grouped.get("product_features") or []}),
+                normalized_catalog_section({"key": "shortcut_packs", "title": "Included collection entitlements", "description": "Collections are included with Sync + Collections only.", "items": grouped.get("shortcut_packs") or []}),
+                normalized_catalog_section({"key": "future_visual_addons", "title": "Future visual add-ons", "description": "Skins and icon packs are delayed future one-time add-ons.", "items": grouped.get("future_visual_addons") or []}),
             ]
         return [section for section in (normalized_catalog_section(section) for section in FALLBACK_CATALOG) if section]
 
@@ -356,8 +362,8 @@ class TestingTab(ctk.CTkFrame):
             box,
             text=(
                 "Enable/Disable writes real owned backend entitlements for the owner account only. "
-                "Items are grouped as product features, collection entitlements, and the 3 skin packs. "
-                "Status badges below each item show whether the backend currently returns it as active."
+                "Items are grouped as product features, subscription-included collections, and delayed visual add-ons. "
+                "Cloud saves currently work only for the owner email until the provider is wired in."
             ),
             text_color="#9ca3af",
             wraplength=430,
@@ -371,12 +377,12 @@ class TestingTab(ctk.CTkFrame):
         ctk.CTkLabel(custom, text="Advanced custom tabforge-* slug", font=("Arial", 13, "bold")).pack(anchor="w", padx=10, pady=(10, 2))
         ctk.CTkLabel(
             custom,
-            text="Only use this when a new purchasable slug exists but is not listed above.",
+            text="Only use this for compatibility aliases or new tabforge-* slugs that are not listed above.",
             text_color="#9ca3af",
             wraplength=390,
             justify="left",
         ).pack(anchor="w", padx=10, pady=(0, 5))
-        ctk.CTkEntry(custom, textvariable=self.custom_entitlement_slug, placeholder_text="example: tabforge-pack-new").pack(fill="x", padx=10, pady=(0, 6))
+        ctk.CTkEntry(custom, textvariable=self.custom_entitlement_slug, placeholder_text="example: tabforge-sync-collections").pack(fill="x", padx=10, pady=(0, 6))
         row = ctk.CTkFrame(custom, fg_color="transparent")
         row.pack(fill="x", padx=10, pady=(0, 10))
         ctk.CTkButton(row, text="Enable custom slug", command=lambda: self.set_custom_entitlement(True)).pack(side="left", fill="x", expand=True, padx=(0, 4))
@@ -426,17 +432,17 @@ class TestingTab(ctk.CTkFrame):
     def _status_for_slug(self, slug):
         ent = self._entitlement_map().get(canonical_entitlement_slug(slug))
         if not ent:
-            return "Inactive Ã¢â‚¬â€ not currently owned by this account", "#9ca3af"
+            return "Inactive — not currently owned by this account", "#9ca3af"
         status = str(ent.get("status") or "").lower()
         if status == "active" and ent.get("isOwnerGrant"):
-            return "ACTIVE Ã¢â‚¬â€ enabled by Owner Tools", "#86efac"
+            return "ACTIVE — enabled by Owner Tools", "#86efac"
         if status == "active" and ent.get("protectedRealEntitlement"):
-            return "ACTIVE Ã¢â‚¬â€ owned from purchase/manual grant; Disable is protected", "#93c5fd"
+            return "ACTIVE — owned from purchase/manual grant; Disable is protected", "#93c5fd"
         if status == "active":
-            return f"ACTIVE Ã‚Â· {ent.get('source') or 'unknown source'}", "#86efac"
+            return f"ACTIVE · {ent.get('source') or 'unknown source'}", "#86efac"
         if status == "revoked":
-            return "Inactive Ã¢â‚¬â€ prior Owner Tools grant was disabled", "#fca5a5"
-        return f"{status or 'unknown'} Ã‚Â· {ent.get('source') or 'unknown source'}", "#facc15"
+            return "Inactive — prior Owner Tools grant was disabled", "#fca5a5"
+        return f"{status or 'unknown'} · {ent.get('source') or 'unknown source'}", "#facc15"
 
     def _render_summary(self):
         state = self.state or {}
@@ -454,6 +460,13 @@ class TestingTab(ctk.CTkFrame):
             ("Real qualified Pro purchases", counts.get("realVerifiedPurchases", 0)),
             ("Effective live qualified total", counts.get("effectiveVerifiedPurchases", 0)),
         ]
+        cloud = state.get("cloud") or {}
+        rows.extend([
+            ("Cloud save mode", "Admin-only enabled" if cloud.get("enabled") else "Stubbed / disabled"),
+            ("Cloud owner account", cloud.get("ownerEmail") or OWNER_EMAIL),
+            ("Cloud storage profile", f"{cloud.get('cloudStorageLimitGb') or 20}GB"),
+            ("Cloud provider", cloud.get("providerStatus") or "stubbed_until_provider"),
+        ])
         for label, value in rows:
             self._summary_row(label, value)
         tiers = state.get("tiers") or []
@@ -462,10 +475,10 @@ class TestingTab(ctk.CTkFrame):
             amount = int(tier.get("rewardAmountCents", 0)) / 100
             status = "REACHED" if tier.get("reached") else f"{tier.get('remaining', 0)} remaining"
             hold = tier.get("payoutHoldDays")
-            hold_text = f" Ã‚Â· {hold} day payout verification hold" if hold is not None else ""
+            hold_text = f" · {hold} day payout verification hold" if hold is not None else ""
             ctk.CTkLabel(
                 self.summary_frame,
-                text=f"{tier.get('requiredPurchases')} qualified Pro purchases Ã¢â€ â€™ ${amount:.2f} Ã‚Â· {status}{hold_text}",
+                text=f"{tier.get('requiredPurchases')} qualified Pro purchases → ${amount:.2f} · {status}{hold_text}",
                 anchor="w",
             ).pack(fill="x", padx=8, pady=2)
 
@@ -498,7 +511,7 @@ class TestingTab(ctk.CTkFrame):
         if extra:
             ctk.CTkLabel(self.entitlement_frame, text="Other active/legacy entitlements returned by backend", font=("Arial", 14, "bold")).pack(anchor="w", padx=8, pady=(14, 3))
             for item in extra:
-                line = f"{item.get('productSlug')} Ã‚Â· {item.get('status')} Ã‚Â· {item.get('source')}"
+                line = f"{item.get('productSlug')} · {item.get('status')} · {item.get('source')}"
                 ctk.CTkLabel(self.entitlement_frame, text=line, anchor="w", wraplength=700, text_color="#facc15").pack(fill="x", padx=8, pady=2)
 
     def _render_rewards(self):
@@ -527,8 +540,8 @@ class TestingTab(ctk.CTkFrame):
         row.pack(fill="x", padx=4, pady=4)
         amount = int(reward.get("rewardAmountCents", 0)) / 100
         label = (
-            f"TEST payout Ã‚Â· tier {reward.get('tierRequiredPurchases')} Ã‚Â· ${amount:.2f} Ã‚Â· "
-            f"STATUS: {status.upper()} Ã‚Â· {reward.get('cashAppHandle') or 'Cash App missing'}"
+            f"TEST payout · tier {reward.get('tierRequiredPurchases')} · ${amount:.2f} · "
+            f"STATUS: {status.upper()} · {reward.get('cashAppHandle') or 'Cash App missing'}"
         )
         ctk.CTkLabel(row, text=label, anchor="w", wraplength=700, font=("Arial", 12, "bold")).pack(fill="x", padx=8, pady=(7, 4))
         ctk.CTkLabel(row, text="Click a next action. The card updates only after the backend confirms the new status.", text_color="#d1d5db", wraplength=700, justify="left").pack(fill="x", padx=8, pady=(0, 4))
@@ -569,7 +582,7 @@ class TestingTab(ctk.CTkFrame):
             ts = entry.get("at") or ""
             action = entry.get("action") or "event"
             detail = entry.get("detail") or entry.get("slug") or entry.get("status") or ""
-            ctk.CTkLabel(self.log_frame, text=f"{ts} Ã‚Â· {action} Ã‚Â· {detail}", anchor="w", wraplength=700, justify="left").pack(fill="x", padx=8, pady=2)
+            ctk.CTkLabel(self.log_frame, text=f"{ts} · {action} · {detail}", anchor="w", wraplength=700, justify="left").pack(fill="x", padx=8, pady=2)
 
     def _set_status(self, message):
         if self.status_label is not None:

@@ -17,6 +17,23 @@ class ProductsTab(ctk.CTkFrame):
         ctk.CTkLabel(top, text="Product Cards / Catalog", font=("Arial", 20, "bold")).pack(side="left")
         ctk.CTkButton(top, text="Refresh", width=90, command=self.refresh).pack(side="right", padx=4)
         ctk.CTkButton(top, text="Add Product Card", width=150, command=self.open_add_dialog).pack(side="right", padx=4)
+
+        profile = ctk.CTkFrame(self, fg_color="#101827")
+        profile.pack(fill="x", padx=10, pady=(0, 10))
+        ctk.CTkLabel(profile, text="Current TabForge billing profile", font=("Arial", 15, "bold"), anchor="w").pack(fill="x", padx=12, pady=(10, 3))
+        ctk.CTkLabel(
+            profile,
+            text=(
+                "$10 one-time Pro: local notes/images on 1 device.  "
+                "$5/month Sync + Collections: current collections, 20GB storage profile, sync across up to 5 devices.  "
+                "Cloud hosting is live only for zadockplant@gmail.com until the provider is wired in.  "
+                "Skins/icon packs are delayed future one-time add-ons."
+            ),
+            text_color="#9ca3af",
+            wraplength=1120,
+            justify="left",
+        ).pack(fill="x", padx=12, pady=(0, 10))
+
         self.list_frame = ctk.CTkScrollableFrame(self)
         self.list_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         self.refresh()
@@ -40,10 +57,13 @@ class ProductsTab(ctk.CTkFrame):
         price_cents = product.get("price_cents") or product.get("priceCents") or 0
         status = product.get("status") or ("active" if product.get("active", True) else "inactive")
         entitlement = product.get("entitlement_slug") or product.get("entitlementSlug") or slug
+        billing_type = product.get("billing_type") or product.get("billingType") or product.get("type") or ""
+        interval = product.get("interval") or (product.get("metadata") or {}).get("interval") or ""
         ctk.CTkLabel(row, text=title, font=("Arial", 15, "bold"), width=170, anchor="w").pack(side="left", padx=8, pady=8)
         ctk.CTkLabel(row, text=f"slug: {slug}", width=190, anchor="w").pack(side="left", padx=8)
         ctk.CTkLabel(row, text=f"${int(price_cents)/100:.2f}", width=80, anchor="w").pack(side="left", padx=8)
         ctk.CTkLabel(row, text=f"entitlement: {entitlement}", width=220, anchor="w").pack(side="left", padx=8)
+        ctk.CTkLabel(row, text=(billing_type + (f"/{interval}" if interval else "")) or status, width=130, anchor="w").pack(side="left", padx=8)
         ctk.CTkLabel(row, text=status, width=90, anchor="w").pack(side="left", padx=8)
 
     def _labeled_entry(self, parent, label, helper, default=""):
@@ -62,12 +82,12 @@ class ProductsTab(ctk.CTkFrame):
         dialog.grab_set()
 
         fields = {}
-        fields["name"] = self._labeled_entry(dialog, "Product name", "Visible display name, for example TabForge or TuneForge.")
-        fields["slug"] = self._labeled_entry(dialog, "Product slug", "Backend/store ID. Use lowercase dashes, for example tabforge-pack-games.")
-        fields["description"] = self._labeled_entry(dialog, "Short description", "Used by admin/catalog views. Public website cards can use this later.")
-        fields["priceCents"] = self._labeled_entry(dialog, "Price in cents", "Example: 500 = $5.00. Your backend creates Stripe Checkout dynamically from this.", "500")
-        fields["entitlementSlug"] = self._labeled_entry(dialog, "Entitlement slug", "What the purchase unlocks. Usually same as product slug.")
-        fields["productLine"] = self._labeled_entry(dialog, "Product line", "TabForge, TuneForge, TubeForge, Inmate Records, etc.")
+        fields["name"] = self._labeled_entry(dialog, "Product name", "Visible display name, for example TabForge Pro or Sync + Collections.", "TabForge Pro")
+        fields["slug"] = self._labeled_entry(dialog, "Product slug", "Backend/store ID. Current examples: tabforge, tabforge-subscription, tabforge-sync-collections.", "tabforge")
+        fields["description"] = self._labeled_entry(dialog, "Short description", "Use the new billing profile: $10 one-time Pro, or $5/month Sync + Collections with 20GB profile.")
+        fields["priceCents"] = self._labeled_entry(dialog, "Price in cents", "Examples: 1000 = $10 one-time Pro; 500 = $5/month subscription.", "1000")
+        fields["entitlementSlug"] = self._labeled_entry(dialog, "Entitlement slug", "What the purchase unlocks. Usually same as product slug; subscription aliases are supported.", "tabforge")
+        fields["productLine"] = self._labeled_entry(dialog, "Product line", "Use TabForge for the browser extension pricing model.", "TabForge")
 
         status_var = ctk.StringVar(value="draft")
         ctk.CTkLabel(dialog, text="Status", font=("Arial", 13, "bold")).pack(anchor="w", padx=18, pady=(12, 2))
