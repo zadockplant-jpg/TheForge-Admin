@@ -1,5 +1,7 @@
 import customtkinter as ctk
 
+from window_fit import place_window
+
 
 def clear_frame(frame):
     for child in frame.winfo_children():
@@ -23,7 +25,7 @@ def text_box(parent, text="", height=120):
 def show_error(parent, message):
     dialog = ctk.CTkToplevel(parent)
     dialog.title("Error")
-    dialog.geometry("440x180")
+    place_window(dialog, 440, 180, parent=parent)
     dialog.grab_set()
     ctk.CTkLabel(dialog, text="Error", font=("Arial", 18, "bold")).pack(pady=(18, 6))
     ctk.CTkLabel(dialog, text=str(message), wraplength=380).pack(padx=18, pady=10)
@@ -33,7 +35,7 @@ def show_error(parent, message):
 def show_info(parent, title, message):
     dialog = ctk.CTkToplevel(parent)
     dialog.title(title)
-    dialog.geometry("460x190")
+    place_window(dialog, 460, 190, parent=parent)
     dialog.grab_set()
     ctk.CTkLabel(dialog, text=title, font=("Arial", 18, "bold")).pack(pady=(18, 6))
     ctk.CTkLabel(dialog, text=str(message), wraplength=400).pack(padx=18, pady=10)

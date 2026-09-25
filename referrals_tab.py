@@ -2,6 +2,7 @@ import customtkinter as ctk
 
 from api_client import ApiError, AdminApiClient
 from ui_helpers import clear_frame, show_error
+from window_fit import place_window
 
 
 HIDDEN_PROGRAM_SLUGS = {"rentawifey"}
@@ -166,7 +167,7 @@ class ReferralsTab(ctk.CTkFrame):
     def open_create(self):
         dialog = ctk.CTkToplevel(self)
         dialog.title("Create Referral Code")
-        dialog.geometry("500x430")
+        place_window(dialog, 500, 430, parent=self)
         dialog.grab_set()
         email = self._labeled_entry(dialog, "Owner email", "Optional. Assigns this referral code to an existing user account.")
         code = self._labeled_entry(dialog, "Referral code", "Optional. Leave blank to auto-generate.")
@@ -184,16 +185,21 @@ class ReferralsTab(ctk.CTkFrame):
     def open_program_dialog(self):
         dialog = ctk.CTkToplevel(self)
         dialog.title("Referral Payout Rule")
-        dialog.geometry("520x690")
+        place_window(dialog, 520, 690, parent=self)
         dialog.grab_set()
-        product = self._labeled_entry(dialog, "Product slug", "Product this rule applies to. TabForge is the live product now.", "tabforge")
-        tier1_count = self._labeled_entry(dialog, "Tier 1 qualified Pro purchases", "How many completed Pro purchases trigger the first payout.", "5")
-        tier1_amount = self._labeled_entry(dialog, "Tier 1 payout cents", "Example: 1000 = $10.00", "1000")
-        tier2_count = self._labeled_entry(dialog, "Tier 2 qualified Pro purchases", "Second payout threshold.", "15")
-        tier2_amount = self._labeled_entry(dialog, "Tier 2 payout cents", "Example: 2000 = $20.00", "2000")
-        tier3_count = self._labeled_entry(dialog, "Tier 3 qualified Pro purchases", "Third payout threshold.", "50")
-        tier3_amount = self._labeled_entry(dialog, "Tier 3 payout cents", "Example: 7500 = $75.00", "7500")
-        hold_days = self._labeled_entry(dialog, "Payout verification hold days", "Fraud/refund review window after the qualifying Pro purchase. Use 7-10 days; default is 10.", "10")
+        # The button stays in view below the fields, which scroll on short screens.
+        footer = ctk.CTkFrame(dialog, fg_color="transparent")
+        footer.pack(side="bottom", fill="x")
+        body = ctk.CTkScrollableFrame(dialog, fg_color="transparent")
+        body.pack(fill="both", expand=True)
+        product = self._labeled_entry(body, "Product slug", "Product this rule applies to. TabForge is the live product now.", "tabforge")
+        tier1_count = self._labeled_entry(body, "Tier 1 qualified Pro purchases", "How many completed Pro purchases trigger the first payout.", "5")
+        tier1_amount = self._labeled_entry(body, "Tier 1 payout cents", "Example: 1000 = $10.00", "1000")
+        tier2_count = self._labeled_entry(body, "Tier 2 qualified Pro purchases", "Second payout threshold.", "15")
+        tier2_amount = self._labeled_entry(body, "Tier 2 payout cents", "Example: 2000 = $20.00", "2000")
+        tier3_count = self._labeled_entry(body, "Tier 3 qualified Pro purchases", "Third payout threshold.", "50")
+        tier3_amount = self._labeled_entry(body, "Tier 3 payout cents", "Example: 7500 = $75.00", "7500")
+        hold_days = self._labeled_entry(body, "Payout verification hold days", "Fraud/refund review window after the qualifying Pro purchase. Use 7-10 days; default is 10.", "10")
 
         def as_int(entry, name):
             try:
@@ -220,4 +226,4 @@ class ReferralsTab(ctk.CTkFrame):
                 self.refresh()
             except ApiError as exc:
                 show_error(dialog, exc)
-        ctk.CTkButton(dialog, text="Save Payout Rule", command=save).pack(padx=18, pady=18, fill="x")
+        ctk.CTkButton(footer, text="Save Payout Rule", command=save).pack(padx=18, pady=18, fill="x")

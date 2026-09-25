@@ -9,6 +9,7 @@ import customtkinter as ctk
 from api_client import ApiError, AdminApiClient
 from config import CASHAPP_WEB_URL
 from ui_helpers import clear_frame, show_error, show_info
+from window_fit import place_window
 
 
 STATUS_ORDER = {"pending": 0, "approved": 1, "rejected": 2, "paid": 3}
@@ -302,7 +303,7 @@ class RewardsTab(ctk.CTkFrame):
         reward_id = str(item.get("id") or "")
         dialog = ctk.CTkToplevel(self)
         dialog.title("Reject payout")
-        dialog.geometry("520x300")
+        place_window(dialog, 520, 300, parent=self)
         dialog.grab_set()
         ctk.CTkLabel(dialog, text="Reject payout", font=("Arial", 19, "bold")).pack(pady=(18, 6))
         ctk.CTkLabel(dialog, text="A rejection note is required and will be recorded in the admin audit log.", wraplength=450).pack(padx=18, pady=6)
@@ -346,7 +347,7 @@ class RewardsTab(ctk.CTkFrame):
 
         dialog = ctk.CTkToplevel(self)
         dialog.title("Process Cash App payout")
-        dialog.geometry("600x570")
+        place_window(dialog, 600, 570, parent=self)
         dialog.grab_set()
 
         ctk.CTkLabel(dialog, text="Process Cash App payout", font=("Arial", 21, "bold")).pack(pady=(18, 5))
@@ -452,7 +453,7 @@ class RewardsTab(ctk.CTkFrame):
         result = {"value": False}
         dialog = ctk.CTkToplevel(owner)
         dialog.title(title)
-        dialog.geometry("500x250")
+        place_window(dialog, 500, 250, parent=owner)
         dialog.grab_set()
         ctk.CTkLabel(dialog, text=title, font=("Arial", 18, "bold")).pack(pady=(20, 8))
         ctk.CTkLabel(dialog, text=message, wraplength=440, justify="left").pack(padx=20, pady=10)

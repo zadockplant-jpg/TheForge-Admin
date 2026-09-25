@@ -2,6 +2,7 @@ import customtkinter as ctk
 
 from api_client import ApiError, AdminApiClient
 from ui_helpers import clear_frame, show_error
+from window_fit import place_window
 
 
 class ProductsTab(ctk.CTkFrame):
@@ -78,20 +79,25 @@ class ProductsTab(ctk.CTkFrame):
     def open_add_dialog(self):
         dialog = ctk.CTkToplevel(self)
         dialog.title("Add Product Card")
-        dialog.geometry("560x680")
+        place_window(dialog, 560, 680, parent=self)
         dialog.grab_set()
+        # The button stays in view below the fields, which scroll on short screens.
+        footer = ctk.CTkFrame(dialog, fg_color="transparent")
+        footer.pack(side="bottom", fill="x")
+        body = ctk.CTkScrollableFrame(dialog, fg_color="transparent")
+        body.pack(fill="both", expand=True)
 
         fields = {}
-        fields["name"] = self._labeled_entry(dialog, "Product name", "Visible display name, for example TabForge Pro or Sync + Collections.", "TabForge Pro")
-        fields["slug"] = self._labeled_entry(dialog, "Product slug", "Backend/store ID. Current examples: tabforge, tabforge-subscription, tabforge-sync-collections.", "tabforge")
-        fields["description"] = self._labeled_entry(dialog, "Short description", "Use the new billing profile: $10 one-time Pro, or $5/month Sync + Collections with 20GB profile.")
-        fields["priceCents"] = self._labeled_entry(dialog, "Price in cents", "Examples: 1000 = $10 one-time Pro; 500 = $5/month subscription.", "1000")
-        fields["entitlementSlug"] = self._labeled_entry(dialog, "Entitlement slug", "What the purchase unlocks. Usually same as product slug; subscription aliases are supported.", "tabforge")
-        fields["productLine"] = self._labeled_entry(dialog, "Product line", "Use TabForge for the browser extension pricing model.", "TabForge")
+        fields["name"] = self._labeled_entry(body, "Product name", "Visible display name, for example TabForge Pro or Sync + Collections.", "TabForge Pro")
+        fields["slug"] = self._labeled_entry(body, "Product slug", "Backend/store ID. Current examples: tabforge, tabforge-subscription, tabforge-sync-collections.", "tabforge")
+        fields["description"] = self._labeled_entry(body, "Short description", "Use the new billing profile: $10 one-time Pro, or $5/month Sync + Collections with 20GB profile.")
+        fields["priceCents"] = self._labeled_entry(body, "Price in cents", "Examples: 1000 = $10 one-time Pro; 500 = $5/month subscription.", "1000")
+        fields["entitlementSlug"] = self._labeled_entry(body, "Entitlement slug", "What the purchase unlocks. Usually same as product slug; subscription aliases are supported.", "tabforge")
+        fields["productLine"] = self._labeled_entry(body, "Product line", "Use TabForge for the browser extension pricing model.", "TabForge")
 
         status_var = ctk.StringVar(value="draft")
-        ctk.CTkLabel(dialog, text="Status", font=("Arial", 13, "bold")).pack(anchor="w", padx=18, pady=(12, 2))
-        ctk.CTkOptionMenu(dialog, variable=status_var, values=["draft", "active", "inactive", "archived"]).pack(fill="x", padx=18)
+        ctk.CTkLabel(body, text="Status", font=("Arial", 13, "bold")).pack(anchor="w", padx=18, pady=(12, 2))
+        ctk.CTkOptionMenu(body, variable=status_var, values=["draft", "active", "inactive", "archived"]).pack(fill="x", padx=18)
 
         def save():
             payload = {key: entry.get().strip() for key, entry in fields.items()}
@@ -113,4 +119,4 @@ class ProductsTab(ctk.CTkFrame):
             except ApiError as exc:
                 show_error(dialog, exc)
 
-        ctk.CTkButton(dialog, text="Create Product Card", command=save).pack(padx=18, pady=18, fill="x")
+        ctk.CTkButton(footer, text="Create Product Card", command=save).pack(padx=18, pady=18, fill="x")
